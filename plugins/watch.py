@@ -27,19 +27,29 @@ def get_updates(offset=None):
     if offset:
         url += f"&offset={offset}"
     
-    with urllib.request.urlopen(url) as response:
-        return json.loads(response.read().decode())
+    try:
+        with urllib.request.urlopen(url) as response:
+            return json.loads(response.read().decode())
+    except Exception as e:
+        print(f"❌ Error fetching updates: {str(e)}")
+        return {}
 
 def send_message(chat_id, text):
     """Telegram pe message bhejta hai."""
-    url = TELEGRAM_API_URL + f"sendMessage?chat_id={chat_id}&text={urllib.parse.quote(text)}"
-    with urllib.request.urlopen(url) as response:
-        return response.read()
+    url = TELEGRAM_API_URL + f"sendMessage"
+    data = json.dumps({"chat_id": chat_id, "text": text}).encode("utf-8")
+    
+    req = urllib.request.Request(url, data, headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req) as response:
+            return response.read()
+    except Exception as e:
+        print(f"❌ Error sending message: {str(e)}")
 
 def main():
-    last_update_id = 0  # Offset fix: Pehle se existing messages ignore honge
+    last_update_id = 0  # Offset fix: Pehle ke messages ignore honge
 
-    print("✅ Bot started! Listening for /watch command...")
+    print("✅ Bot started! Waiting for /watch command...")
 
     while True:
         updates = get_updates(last_update_id)
